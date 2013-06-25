@@ -9,11 +9,15 @@ Object.defineProperty(Number.prototype, "m", {
   get: function(){
     var v = this.valueOf();
     //determine what combination of operators resulted in this
-    // find highest index Math.round(Math.log(Math.abs(-1109))/Math.log(10))
-    
-    for(var i = 0; i < arrays.length; i++){
-      console.log(v, Math.pow(radix, i));
+    // find highest index 
+    var sumlist = [], sublist = [];
+    for(var i = Math.round(Math.log(Math.abs(-1109))/Math.log(10)) + 1; i--; ){
+      var digit = Math.round((v / Math.pow(radix, i)) % radix);
+      if(digit == -9 || digit == 1) sumlist.push(arrays[i]);
+      if(digit == 9 || digit == -1) sublist.push(arrays[i]);
+      console.log(i, Math.pow(radix, i))
     }
+    console.log(sumlist, sublist)
   }
 });
 
