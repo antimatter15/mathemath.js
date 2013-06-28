@@ -1,6 +1,6 @@
-var cache = {};
 var radix = 10;
-var arrays = [];
+var str_cache = {};
+var num_cache = [];
 
 function wrap(fn){
   var tokens = {};
@@ -19,9 +19,9 @@ function wrap(fn){
 		//determine what combination of operators resulted in this
 		while(i--){
 			var digit = Math.round((v / Math.pow(radix, i)) % radix);
-			if(digit == 1) sumlist.push(arrays[i]);
-			else if(digit == radix - 1) sublist.push(arrays[i]);
-			else if(digit == 0) unused.push(arrays[i]);
+			if(digit == 1) sumlist.push(num_cache[i]);
+			else if(digit == radix - 1) sublist.push(num_cache[i]);
+			else if(digit == 0) unused.push(num_cache[i]);
 			else return null;
 		}
 		var all = sumlist.concat(sublist.map(negate));
@@ -29,12 +29,16 @@ function wrap(fn){
 		return transpose(all).map(sum)
 	}
 	function fix(value){
-		if(typeof value == 'number'){
+			
+		if((typeof value == 'number' || value instanceof Number)){
 			var fixed = fixnum(value);
-			if(fixed) value = fixed;	
+			if(fixed) value = fixed;
 		}
-		if(value in cache){
-			return cache[value]
+		if((typeof value == "string" || value instanceof String) && value[0] == "@"){
+			return document.querySelectorAll(value.slice(1))
+		}
+		if(value in str_cache){
+			return str_cache[value]
 		}else{
 			return value
 		}
@@ -44,13 +48,13 @@ function wrap(fn){
 		tokens.forEach(function(token){
 			Object.defineProperty(fake_scope, token, {
 				get: function(){
-				
 					if(typeof scope[token] == 'object'){
 					// console.log('get (recursive)', token, scope[token])
 						return fake(scope[token]);
 					}else if(typeof scope[token] == 'function'){
 						// console.log('function', token, scope[token])
 						return function(){
+							// console.log('fn called', token, arguments)
 							var arrg = [].slice.call(arguments, 0).map(fix);
 							scope[token].apply(scope, arrg);
 						}
@@ -68,39 +72,73 @@ function wrap(fn){
 		})
 		return fake_scope
 	}
+
+	function get(obj, attr){
+		// console.log('get', attr, obj)
+		if(obj.__attr){
+			return obj.__attr[attr];
+		}else{
+			return obj[attr];
+		}
+	}
+
 	function proto(primitive){
+		if(!("__attr" in primitive)){
+			primitive.__attr = {};	
+		}
+		
+
 		tokens.forEach(function(token){
-			var original = primitive[token];
+			if(!(token in primitive.__attr))
+				primitive.__attr[token] = primitive[token];
+			
 			Object.defineProperty(primitive, token, {
 				get: function(){
-					return fix(this)[token]
+					return get(fix(this), token)
 				}
 			})		
 		})
 	}
-	proto(Number)
+	proto(Number.prototype)
+	proto(String.prototype)
 	fn(fake(window));
 }
+
+Object.keys(document.createElement('input')).forEach(function(key){
+	if(NodeList.prototype[key]) return;
+	Object.defineProperty(NodeList.prototype, key, {
+		get: function(){
+			return [].slice.call(this, 0).map(function(e){
+				return e[key]
+			})
+		},
+		set: function(val){
+			[].slice.call(this, 0).forEach(function(e){
+				e[key] = val;
+			})
+		}
+	})
+})
 
 Object.defineProperty(Array.prototype, 'l', {
 	get: function(){
 		var n = {};
 		var id = Math.random().toString(36).slice(4);
 		for(var i = 0; i < this.length; i++)
-			cache[id+i] = n[id+i] = this[i];
+			str_cache[id+i] = n[id+i] = this[i];
 		return n;	
 	}
 });
 
 Array.prototype.valueOf = function(){
-  return Math.pow(radix, arrays.push(this) - 1);
+  return Math.pow(radix, num_cache.push(this) - 1);
 }
 
 
 wrap(function(e){with(e){
-	console.log([1,2,3,4] + [5,6,7,8] - [1, 2, 3, 4])
+	// console.log([1, 2, 3, 4] + [5, 6, 7, 8] - [1, 2, 3, 4])
 	// var blah = "hello world";
-
+	console.log("@div".innerHTML)
 	// alert("hi");
 	// for(i in [1,2,3,4].l){
 	// 	console.log('blarp', i);
