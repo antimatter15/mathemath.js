@@ -136,11 +136,11 @@ Array.prototype.valueOf = function(){
 
 
 wrap(function(e){with(e){
-	// console.log([1, 2, 3, 4] + [5, 6, 7, 8] - [1, 2, 3, 4])
+	console.log([1, 2, 3, 4] + [5, 6, 7, 8] - [1, 2, 3, 4])
 	// var blah = "hello world";
 	console.log("@div".innerHTML)
 	// alert("hi");
-	// for(i in [1,2,3,4].l){
-	// 	console.log('blarp', i);
-	// }
+	for(i in [1,2,3,4].l){
+	 	console.log('blarp', i);
+	}
 }})
